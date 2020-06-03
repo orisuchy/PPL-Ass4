@@ -3,7 +3,7 @@
 // L5 extends L4 with:
 // optional type annotations
 
-import { join, map, zipWith } from "ramda";
+import { join, map, zipWith, values } from "ramda";
 import { Sexp, Token } from 's-expression';
 import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, makeSymbolSExp, SExpValue, valueToString } from './L5-value';
 import { isTVar, makeFreshTVar, parseTExp, unparseTExp, TExp } from './TExp';
@@ -41,6 +41,8 @@ import { isArray, isString, isNumericString, isIdentifier } from "../shared/type
 //         |  ( let ( <binding>* ) <cexp>+ )  / LetExp(bindings:Binding[], body:CExp[]))
 //         |  ( letrec ( binding*) <cexp>+ )  / LetrecExp(bindings:Bindings[], body: CExp)
 //         |  ( set! <var> <cexp>)            / SetExp(var: varRef, val: CExp)
+//         |  ( values <cexp>* )              / values(vals: CExp[])          
+//         |  ( let-values  <var>*  <values> <cexp> )          / let-values(vars:VarDecl[], vals: values, body: CExp[])
 // <binding>  ::= ( <var> <cexp> )            / Binding(var:VarDecl, val:Cexp)
 // <prim-op>  ::= + | - | * | / | < | > | = | not |  eq? | string=?
 //                  | cons | car | cdr | list? | number?
@@ -67,9 +69,9 @@ export const isAtomicExp = (x: any): x is AtomicExp =>
     isNumExp(x) || isBoolExp(x) || isStrExp(x) ||
     isPrimOp(x) || isVarRef(x);
 
-export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp;
+export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp| Values | Letvalues;
 export const isCompoundExp = (x: any): x is CompoundExp =>
-    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x);
+    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isValues(x) || isLetvalues(x);
 export const expComponents = (e: Exp): CExp[] =>
     isIfExp(e) ? [e.test, e.then, e.alt] :
     isProcExp(e) ? e.body :
@@ -84,6 +86,16 @@ export const expComponents = (e: Exp): CExp[] =>
 export interface Program {tag: "Program"; exps: Exp[]; }
 export const makeProgram = (exps: Exp[]): Program => ({tag: "Program", exps: exps});
 export const isProgram = (x: any): x is Program => x.tag === "Program";
+
+//values - for example (values 1 2 3)
+export interface Values {tag: "Values"; val: CExp[]; }
+export const makeValues = (val: CExp[]): Values => ({tag: "Values", val: val});
+export const isValues = (x: any): x is Values => x.tag === "Values";
+
+//Let-values - for example (let-values (a b c) (values 1 2 3))
+export interface Letvalues {tag: "Let-values"; vars: VarDecl[]; val: Values; body: CExp[];}
+export const makeLetvalues = (vars: VarDecl[], val: Values, body: CExp[]): Letvalues => ({tag: "Let-values", vars: vars, val: val, body: body});
+export const isLetvalues = (x: any): x is Letvalues => x.tag === "Let-values";
 
 export interface DefineExp {tag: "DefineExp"; var: VarDecl; val: CExp; }
 export const makeDefineExp = (v: VarDecl, val: CExp): DefineExp =>
@@ -192,8 +204,17 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     op === "quote" ? parseLitExp(first(params)) :
     op === "letrec" ? parseLetrecExp(first(params), rest(params)) :
     op === "set!" ? parseSetExp(params) :
+    op === "values" ? parseValuesExp(params) :
+    op === "let-values"  ? parseLetValuesExp(params):
     makeFailure("Never");
 
+export const parseValuesExp = (sexp: Sexp): Result<Values> =>
+    isArray(sexp)? safe2((val: CExp[] ,x) => makeOk(makeValues(val)))
+                                 (mapResult(x=>parseL5CExp(x),sexp), makeFailure("x") ) :
+    makeFailure("lalala\n");
+   
+
+    
 export const parseDefine = (params: Sexp[]): Result<DefineExp> =>
     isEmpty(params) ? makeFailure("define missing 2 arguments") :
     isEmpty(rest(params)) ? makeFailure("define missing 1 arguments") :
