@@ -5,11 +5,11 @@
 
 import { join, map, zipWith, values } from "ramda";
 import { Sexp, Token } from 's-expression';
-import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, makeSymbolSExp, SExpValue, valueToString } from './L5-value';
+import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, makeSymbolSExp, SExpValue, valueToString, isSExp } from './L5-value';
 import { isTVar, makeFreshTVar, parseTExp, unparseTExp, TExp } from './TExp';
 import { allT, first, rest, second, isEmpty } from '../shared/list';
 import { parse as p, isToken, isSexpString } from "../shared/parser";
-import { Result, bind, makeFailure, mapResult, makeOk, safe2, safe3 } from "../shared/result";
+import { Result, bind, makeFailure, mapResult, makeOk, safe2, safe3, isOk } from "../shared/result";
 import { isArray, isString, isNumericString, isIdentifier } from "../shared/type-predicates";
 
 /*
@@ -205,16 +205,30 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     op === "letrec" ? parseLetrecExp(first(params), rest(params)) :
     op === "set!" ? parseSetExp(params) :
     op === "values" ? parseValuesExp(params) :
-    op === "let-values"  ? parseLetValuesExp(params):
+    op === "let-values"  ? parseLetValuesExp(first(params), rest(params)):
     makeFailure("Never");
 
 export const parseValuesExp = (sexp: Sexp): Result<Values> =>
     isArray(sexp)? safe2((val: CExp[]) => makeOk(makeValues(val)))
-                                 (mapResult(x=>parseL5CExp(x),sexp), makeFailure("bad Values") ) :
-    makeFailure("bad Values\n");
-   
+                        (mapResult(parseL5CExp,sexp), makeFailure("Bad Values") ) :
+    makeFailure("Bad Values\n");
 
+export const parseLetValuesExp = (vars: Sexp, rrest: Sexp[]): Result<Letvalues> =>
     
+    isArray(vars)? safe3((vars:VarDecl[], val: Values, body: CExp[])=>makeOk(makeLetvalues(vars,val,body)))
+                        (mapResult(parseVarDecl,vars), 
+                         parseValuesExp(first(rrest)),
+                         mapResult(parseL5CExp, rest(rrest))) :
+    makeFailure("Bad let-values\n");
+
+/*
+const parseLetExp = (bindings: Sexp, body: Sexp[]): Result<LetExp> =>
+    isEmpty(body) ? makeFailure('Body of "let" cannot be empty') :
+    ! isGoodBindings(bindings) ? makeFailure(`Invalid bindings: ${JSON.stringify(bindings)}`) :
+    safe2((bdgs: Binding[], body: CExp[]) => makeOk(makeLetExp(bdgs, body)))
+        (parseBindings(bindings), mapResult(parseL5CExp, body));
+*/
+
 export const parseDefine = (params: Sexp[]): Result<DefineExp> =>
     isEmpty(params) ? makeFailure("define missing 2 arguments") :
     isEmpty(rest(params)) ? makeFailure("define missing 1 arguments") :
@@ -371,6 +385,8 @@ export const unparse = (e: Parsed): Result<string> =>
     isProcExp(e) ? unparseProcExp(e) :
     isLitExp(e) ? makeOk(unparseLitExp(e)) :
     isSetExp(e) ? unparseSetExp(e) :
+    isValues(e)? unparseValues(e):
+    isLetvalues(e)? unparseLetValues(e):
     // DefineExp | Program
     isDefineExp(e) ? safe2((vd: string, val: string) => makeOk(`(define ${vd} ${val})`))
                         (unparseVarDecl(e.var), unparse(e.val)) :
@@ -412,3 +428,11 @@ const unparseLetrecExp = (le: LetrecExp): Result<string> =>
 
 const unparseSetExp = (se: SetExp): Result<string> =>
     bind(unparse(se.val), (val: string) => makeOk(`(set! ${se.var.var} ${val})`));
+
+const unparseValues = (val: Values) : Result<string> => 
+    safe2((vals: string) => makeOk(`(values ${vals})`))
+        (unparseLExps(val.val), makeFailure("bad"))
+        
+const unparseLetValues = (le: Letvalues) : Result<string> => 
+    safe3((vars: string[], vals:string, body: string) => makeOk(`(let-values (${join(" ", vars)}) (${vals}) ${body})`))
+        (mapResult(unparseVarDecl,le.vars), unparseValues(le.val), unparseLExps(le.body));
