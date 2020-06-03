@@ -209,9 +209,9 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     makeFailure("Never");
 
 export const parseValuesExp = (sexp: Sexp): Result<Values> =>
-    isArray(sexp)? safe2((val: CExp[] ,x) => makeOk(makeValues(val)))
-                                 (mapResult(x=>parseL5CExp(x),sexp), makeFailure("x") ) :
-    makeFailure("lalala\n");
+    isArray(sexp)? safe2((val: CExp[]) => makeOk(makeValues(val)))
+                                 (mapResult(x=>parseL5CExp(x),sexp), makeFailure("bad Values") ) :
+    makeFailure("bad Values\n");
    
 
     
