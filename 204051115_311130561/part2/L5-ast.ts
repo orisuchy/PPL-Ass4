@@ -221,13 +221,6 @@ export const parseLetValuesExp = (vars: Sexp, rrest: Sexp[]): Result<Letvalues> 
                          mapResult(parseL5CExp, rest(rrest))) :
     makeFailure("Bad let-values\n");
 
-/*
-const parseLetExp = (bindings: Sexp, body: Sexp[]): Result<LetExp> =>
-    isEmpty(body) ? makeFailure('Body of "let" cannot be empty') :
-    ! isGoodBindings(bindings) ? makeFailure(`Invalid bindings: ${JSON.stringify(bindings)}`) :
-    safe2((bdgs: Binding[], body: CExp[]) => makeOk(makeLetExp(bdgs, body)))
-        (parseBindings(bindings), mapResult(parseL5CExp, body));
-*/
 
 export const parseDefine = (params: Sexp[]): Result<DefineExp> =>
     isEmpty(params) ? makeFailure("define missing 2 arguments") :
