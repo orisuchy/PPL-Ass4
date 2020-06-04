@@ -1,6 +1,6 @@
 
 
-function f(x: number): Promise<number>{
+export function f(x: number): Promise<number>{
   return new Promise<number>( (resolve : any, reject: any) => {
     if( x != 0)
       resolve(1/x);
@@ -9,10 +9,10 @@ function f(x: number): Promise<number>{
   })
 }
 
-function g (x: number): number{
+export function g (x: number): number{
     return (x * x);
 }
 
-function h (x: number): Promise<number> {
+export function h (x: number): Promise<number> {
     return f(g(x))
 }
