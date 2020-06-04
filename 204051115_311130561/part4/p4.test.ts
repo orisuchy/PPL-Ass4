@@ -52,3 +52,4 @@ describe('promises 2', () => {
             .to.deep.equal([1, 'i\'m late']);
     });
 });
+*/
