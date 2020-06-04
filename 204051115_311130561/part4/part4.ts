@@ -1,30 +1,18 @@
 
-// const readFilePromise = (filename: string): Promise<string> => {
-//     return new Promise<string>( (resolve, reject) => {
-//       fs.readFile(filename, (err, res) => {
-//         if (err) 
-//           reject(err);
-//         else
-//           resolve(res.toString('utf8'));
-//       })
-//     })
-//   }
-
-
-
-
-
 
 function f(x: number): Promise<number>{
-    return new Promise<number>( (resolve,reject) => {
-        x = 1/x;
+  return new Promise<number>( (resolve : any, reject: any) => {
+    if( x != 0)
+      resolve(1/x);
+    else
+      reject("x = 0\n");
+  })
 }
 
-
-function g(x: number): number{
-    return x*x
+function g (x: number): number{
+    return (x * x);
 }
 
-function h (x: number): number {
+function h (x: number): Promise<number> {
     return f(g(x))
 }
