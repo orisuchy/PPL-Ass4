@@ -69,9 +69,9 @@ export const isAtomicExp = (x: any): x is AtomicExp =>
     isNumExp(x) || isBoolExp(x) || isStrExp(x) ||
     isPrimOp(x) || isVarRef(x);
 
-export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp| Values | Letvalues;
+export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp| ValuesExp | LetvaluesExp;
 export const isCompoundExp = (x: any): x is CompoundExp =>
-    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isValues(x) || isLetvalues(x);
+    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isLetrecExp(x) || isSetExp(x) || isValuesExp(x) || isLetvaluesExp(x);
 export const expComponents = (e: Exp): CExp[] =>
     isIfExp(e) ? [e.test, e.then, e.alt] :
     isProcExp(e) ? e.body :
@@ -88,14 +88,14 @@ export const makeProgram = (exps: Exp[]): Program => ({tag: "Program", exps: exp
 export const isProgram = (x: any): x is Program => x.tag === "Program";
 
 //values - for example (values 1 2 3)
-export interface Values {tag: "Values"; val: CExp[]; }
-export const makeValues = (val: CExp[]): Values => ({tag: "Values", val: val});
-export const isValues = (x: any): x is Values => x.tag === "Values";
+export interface ValuesExp {tag: "Values"; val: CExp[]; }
+export const makeValuesExp = (val: CExp[]): ValuesExp => ({tag: "Values", val: val});
+export const isValuesExp = (x: any): x is ValuesExp => x.tag === "Values";
 
 //Let-values - for example (let-values (a b c) (values 1 2 3))
-export interface Letvalues {tag: "Let-values"; vars: VarDecl[]; val: Values; body: CExp[];}
-export const makeLetvalues = (vars: VarDecl[], val: Values, body: CExp[]): Letvalues => ({tag: "Let-values", vars: vars, val: val, body: body});
-export const isLetvalues = (x: any): x is Letvalues => x.tag === "Let-values";
+export interface LetvaluesExp {tag: "Let-values"; vars: VarDecl[]; val: ValuesExp; body: CExp[];}
+export const makeLetvaluesExp = (vars: VarDecl[], val: ValuesExp, body: CExp[]): LetvaluesExp => ({tag: "Let-values", vars: vars, val: val, body: body});
+export const isLetvaluesExp = (x: any): x is LetvaluesExp => x.tag === "Let-values";
 
 export interface DefineExp {tag: "DefineExp"; var: VarDecl; val: CExp; }
 export const makeDefineExp = (v: VarDecl, val: CExp): DefineExp =>
@@ -208,14 +208,14 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     op === "let-values"  ? parseLetValuesExp(first(params), rest(params)):
     makeFailure("Never");
 
-export const parseValuesExp = (sexp: Sexp): Result<Values> =>
-    isArray(sexp)? safe2((val: CExp[]) => makeOk(makeValues(val)))
+export const parseValuesExp = (sexp: Sexp): Result<ValuesExp> =>
+    isArray(sexp)? safe2((val: CExp[]) => makeOk(makeValuesExp(val)))
                         (mapResult(parseL5CExp,sexp), makeFailure("Bad Values") ) :
     makeFailure("Bad Values\n");
 
-export const parseLetValuesExp = (vars: Sexp, rrest: Sexp[]): Result<Letvalues> =>
+export const parseLetValuesExp = (vars: Sexp, rrest: Sexp[]): Result<LetvaluesExp> =>
     
-    isArray(vars)? safe3((vars:VarDecl[], val: Values, body: CExp[])=>makeOk(makeLetvalues(vars,val,body)))
+    isArray(vars)? safe3((vars:VarDecl[], val: ValuesExp, body: CExp[])=>makeOk(makeLetvaluesExp(vars,val,body)))
                         (mapResult(parseVarDecl,vars), 
                          parseValuesExp(first(rrest)),
                          mapResult(parseL5CExp, rest(rrest))) :
@@ -258,7 +258,7 @@ const isPrimitiveOp = (x: string): boolean =>
      "number?", "boolean?", "symbol?", "string?", "display", "newline"].includes(x);
 
 const isSpecialForm = (x: string): boolean =>
-    ["if", "lambda", "let", "quote", "letrec", "set!"].includes(x);
+    ["if", "lambda", "values", "let-values", "let", "quote", "letrec", "set!"].includes(x);
 
 const parseAppExp = (op: Sexp, params: Sexp[]): Result<AppExp> =>
     safe2((rator: CExp, rands: CExp[]) => makeOk(makeAppExp(rator, rands)))
@@ -378,8 +378,8 @@ export const unparse = (e: Parsed): Result<string> =>
     isProcExp(e) ? unparseProcExp(e) :
     isLitExp(e) ? makeOk(unparseLitExp(e)) :
     isSetExp(e) ? unparseSetExp(e) :
-    isValues(e)? unparseValues(e):
-    isLetvalues(e)? unparseLetValues(e):
+    isValuesExp(e)? unparseValues(e):
+    isLetvaluesExp(e)? unparseLetValues(e):
     // DefineExp | Program
     isDefineExp(e) ? safe2((vd: string, val: string) => makeOk(`(define ${vd} ${val})`))
                         (unparseVarDecl(e.var), unparse(e.val)) :
@@ -422,10 +422,10 @@ const unparseLetrecExp = (le: LetrecExp): Result<string> =>
 const unparseSetExp = (se: SetExp): Result<string> =>
     bind(unparse(se.val), (val: string) => makeOk(`(set! ${se.var.var} ${val})`));
 
-const unparseValues = (val: Values) : Result<string> => 
+const unparseValues = (val: ValuesExp) : Result<string> => 
     safe2((vals: string) => makeOk(`(values ${vals})`))
         (unparseLExps(val.val), makeFailure("bad"))
         
-const unparseLetValues = (le: Letvalues) : Result<string> => 
+const unparseLetValues = (le: LetvaluesExp) : Result<string> => 
     safe3((vars: string[], vals:string, body: string) => makeOk(`(let-values (${join(" ", vars)}) (${vals}) ${body})`))
         (mapResult(unparseVarDecl,le.vars), unparseValues(le.val), unparseLExps(le.body));
