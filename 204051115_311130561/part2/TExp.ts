@@ -31,7 +31,7 @@
 */
 import { chain, concat, map, uniq } from "ramda";
 import { Sexp } from "s-expression";
-import { isEmpty } from "../shared/list";
+import { isEmpty, allT } from "../shared/list";
 import { isArray, isBoolean, isString } from '../shared/type-predicates';
 import { makeBox, setBox, unbox, Box } from '../shared/box';
 import { first, rest } from '../shared/list';
@@ -147,13 +147,13 @@ export const parseTE = (t: string): Result<TExp> =>
 ;; parseTExp('T1') => '(tvar T1)
 ;; parseTExp('(T * T -> boolean)') => '(proc-te ((tvar T) (tvar T)) bool-te)
 ;; parseTExp('(number -> (number -> number)') => '(proc-te (num-te) (proc-te (num-te) num-te))
+;; parseTExp('(values T1 T2 T3)') => '(tvar T1) * (tvar T2) * (tvar T3))
 */
 export const parseTExp = (texp: Sexp): Result<TExp> =>
     (texp === "number") ? makeOk(makeNumTExp()) :
     (texp === "boolean") ? makeOk(makeBoolTExp()) :
     (texp === "void") ? makeOk(makeVoidTExp()) :
     (texp === "string") ? makeOk(makeStrTExp()) :
-    (texp === "tuple") ? makeOk(makeEmptyTupleTExp()):
     isString(texp) ? makeOk(makeTVar(texp)) :
     isArray(texp) ? parseCompoundTExp(texp) :
     makeFailure(`Unexpected TExp - ${texp}`);
@@ -163,7 +163,21 @@ export const parseTExp = (texp: Sexp): Result<TExp> =>
 ;; expected exactly one -> in the list
 ;; We do not accept (a -> b -> c) - must parenthesize
 */
-const parseCompoundTExp = (texps: Sexp[]): Result<ProcTExp> => {
+const parseCompoundTExp = (texps: Sexp[]): Result<CompoundTExp> => {
+    const pos = texps.indexOf('->');
+    return (pos !== -1)  ? parseProcTExp(texps) :
+    parseNoParameterTupleTExp(texps)            
+};
+
+const parseNoParameterTupleTExp = (texps: Sexp[]): Result<TupleTExp> => {
+    const parsedTuple : Result<TExp[]> = parseTupleTExp(texps)
+    return  isEmpty(parsedTuple)? makeOk(makeEmptyTupleTExp()):
+            bind(parsedTuple, (val:TExp[])=> allT(isNonTupleTExp, val)? makeOk(makeNonEmptyTupleTExp(val)):
+                                                                        makeFailure("tuple in tuple"));
+};
+
+
+const parseProcTExp = (texps: Sexp[]): Result<ProcTExp> => {
     const pos = texps.indexOf('->');
     return (pos === -1)  ? makeFailure(`Procedure type expression without -> - ${texps}`) :
            (pos === 0) ? makeFailure(`No param types in proc texp - ${texps}`) :
@@ -172,7 +186,6 @@ const parseCompoundTExp = (texps: Sexp[]): Result<ProcTExp> => {
            safe2((args: TExp[], returnTE: TExp) => makeOk(makeProcTExp(args, returnTE)))
                 (parseTupleTExp(texps.slice(0, pos)), parseTExp(texps[pos + 1]));
 };
-
 /*
 ;; Expected structure: <te1> [* <te2> ... * <ten>]?
 ;; Or: Empty
@@ -186,6 +199,13 @@ const parseTupleTExp = (texps: Sexp[]): Result<TExp[]> => {
         isEmpty(rest(texps)) ? makeOk(texps) :
         texps[1] !== '*' ? makeFailure(`Parameters of procedure type must be separated by '*': ${texps}`) :
         bind(splitEvenOdds(texps.slice(2)), (sexps: Sexp[]) => makeOk([texps[0], ...sexps]));
+
+
+        /*
+       1)  N * N * S
+       2)  N * S
+       3) OK<[N, ,N ,S]>
+        */
 
     return isEmptyTuple(texps) ? makeOk([]) : bind(splitEvenOdds(texps),
                                                    (argTEs: Sexp[]) => mapResult(parseTExp, argTEs));
@@ -208,6 +228,8 @@ export const unparseTExp = (te: TExp): Result<string> => {
         isTVar(x) ? up(tvarContents(x)) :
         isProcTExp(x) ? safe2((paramTEs: string[], returnTE: string) => makeOk([...paramTEs, '->', returnTE]))
                             (unparseTuple(x.paramTEs), unparseTExp(x.returnTE)) :
+        isNonEmptyTupleTExp(x)? unparseTuple(x.TEs):    // unparseTuple as already was defined above
+        isEmptyTupleTExp(x)? unparseTuple([]):
         makeFailure("Never");
     const unparsed = up(te);
     return bind(unparsed,
