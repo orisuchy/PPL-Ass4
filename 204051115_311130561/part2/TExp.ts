@@ -35,7 +35,7 @@ import { isEmpty, allT } from "../shared/list";
 import { isArray, isBoolean, isString } from '../shared/type-predicates';
 import { makeBox, setBox, unbox, Box } from '../shared/box';
 import { first, rest } from '../shared/list';
-import { Result, bind, makeOk, makeFailure, safe2, mapResult } from "../shared/result";
+import { Result, bind, makeOk, makeFailure, safe2, mapResult, isOk } from "../shared/result";
 import { parse as p } from "../shared/parser";
 
 export type TExp =  AtomicTExp | CompoundTExp | TVar;
@@ -171,9 +171,10 @@ const parseCompoundTExp = (texps: Sexp[]): Result<CompoundTExp> => {
 
 const parseNoParameterTupleTExp = (texps: Sexp[]): Result<TupleTExp> => {
     const parsedTuple : Result<TExp[]> = parseTupleTExp(texps)
-    return  isEmpty(parsedTuple)? makeOk(makeEmptyTupleTExp()):
+    return  isOk(parsedTuple)? isEmpty(parsedTuple.value)? makeOk(makeEmptyTupleTExp()):
             bind(parsedTuple, (val:TExp[])=> allT(isNonTupleTExp, val)? makeOk(makeNonEmptyTupleTExp(val)):
-                                                                        makeFailure("tuple in tuple"));
+                                                                        makeFailure("tuple in tuple")):
+                                                                        makeFailure("bad tuple");
 };
 
 

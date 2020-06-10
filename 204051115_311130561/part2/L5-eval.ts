@@ -30,15 +30,16 @@ export const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
     isLetExp(exp) ? evalLet(exp, env) :
     isLetrecExp(exp) ? evalLetrec(exp, env) :
     isSetExp(exp) ? evalSet(exp, env) :
-    isValuesExp(exp)? evalValues(exp, env):
-    isLetvaluesExp(exp)? evaLetValues(exp, env):
+   // isValuesExp(exp)? evalValues(exp, env):
+    //isLetvaluesExp(exp)? evaLetValues(exp, env):
     isAppExp(exp) ? safe2((proc: Value, args: Value[]) => applyProcedure(proc, args))
                         (applicativeEval(exp.rator, env), mapResult(rand => applicativeEval(rand, env), exp.rands)) :
     makeFailure(`Bad L5 AST ${exp}`);
 
 export const isTrueValue = (x: Value): boolean =>
     ! (x === false);
-
+///////Proceed here
+/*
 const evalValues(exp: CExp, env: Env)=>
     makeOk(makeTuple(exp));
 
@@ -46,6 +47,7 @@ const evalValues(exp: CExp, env: Env)=>
 const evaLetValues(exp:CExp, env:Env){
 
 }
+*/
 
 const evalIf = (exp: IfExp, env: Env): Result<Value> =>
     bind(applicativeEval(exp.test, env),
