@@ -173,8 +173,8 @@ const parseNoParameterTupleTExp = (texps: Sexp[]): Result<TupleTExp> => {
     const parsedTuple : Result<TExp[]> = parseTupleTExp(texps)
     return  isOk(parsedTuple)? isEmpty(parsedTuple.value)? makeOk(makeEmptyTupleTExp()):
             bind(parsedTuple, (val:TExp[])=> allT(isNonTupleTExp, val)? makeOk(makeNonEmptyTupleTExp(val)):
-                                                                        makeFailure("tuple in tuple")):
-                                                                        makeFailure("bad tuple");
+                                                                        makeFailure("tuple in tuple - parse no paremetr ")):
+                                                                        makeFailure("bad tuple - parse no paremetr");
 };
 
 

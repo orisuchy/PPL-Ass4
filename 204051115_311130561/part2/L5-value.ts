@@ -1,8 +1,8 @@
 // ========================================================
 // Value type definition for L5
 
-import { append, join } from 'ramda';
-import { isPrimOp, CExp, PrimOp, VarDecl } from './L5-ast';
+import { append, join, map } from 'ramda';
+import { isPrimOp, CExp, PrimOp, VarDecl, makeValuesExp, makeNumExp } from './L5-ast';
 import { Env } from './L5-env';
 import { isNumber, isArray, isString } from '../shared/type-predicates';
 import { isTupleTExp } from './TExp';
@@ -35,6 +35,7 @@ export interface Tuple{
     tag: "Tuple"
     list: CExp[]
 }
+
 export interface EmptySExp {
     tag: "EmptySExp";
 }
@@ -58,13 +59,14 @@ export const isEmptySExp = (x: any): x is EmptySExp => x.tag === "EmptySExp";
 export const makeSymbolSExp = (val: string): SymbolSExp =>
     ({tag: "SymbolSExp", val: val});
 export const isSymbolSExp = (x: any): x is SymbolSExp => x.tag === "SymbolSExp";
-
+// tuple has an enviroment for possible vardcl
 export const makeTuple = (list: CExp[]): Tuple =>
     ({tag: "Tuple", list: list});
 export const isTuple = (x: any): x is Tuple => x.tag === "Tuple";
 
 // Printable form for values
-export const closureToString = (c: Closure): string =>
+export const closureToString = 
+(c: Closure): string =>
     // `<Closure ${c.params} ${L3unparse(c.body)}>`
     `<Closure ${c.params} ${c.body}>`
 
@@ -87,4 +89,14 @@ export const valueToString = (val: Value): string =>
     isSymbolSExp(val) ? val.val :
     isEmptySExp(val) ? "'()" :
     isCompoundSExp(val) ? compoundSExpToString(val) :
-    "Error: unknown value type "+val 
+    //another option - like closure, check
+    isTuple(val) ? '('+val.list.join(" ")+')':
+    "Error: unknown value type "+val
+
+    
+/*
+//test
+let array = [1, 2, 3].map(makeNumExp);
+let arrayTuple = makeTuple(array);
+console.log(valueToString(arrayTuple))
+*/

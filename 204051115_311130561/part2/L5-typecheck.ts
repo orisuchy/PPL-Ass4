@@ -4,14 +4,15 @@ import { equals, map, zipWith } from 'ramda';
 import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLetrecExp, isLetExp, isNumExp,
          isPrimOp, isProcExp, isProgram, isStrExp, isVarRef, parseL5Exp, unparse,
          AppExp, BoolExp, DefineExp, Exp, IfExp, LetrecExp, LetExp, NumExp,
-         Parsed, PrimOp, ProcExp, Program, StrExp } from "./L5-ast";
+         Parsed, PrimOp, ProcExp, Program, StrExp, isValuesExp, isLetvaluesExp, ValuesExp, LetvaluesExp, CExp } from "./L5-ast";
 import { applyTEnv, makeEmptyTEnv, makeExtendTEnv, TEnv } from "./TEnv";
 import { isProcTExp, makeBoolTExp, makeNumTExp, makeProcTExp, makeStrTExp, makeVoidTExp,
          parseTE, unparseTExp,
-         BoolTExp, NumTExp, StrTExp, TExp, VoidTExp } from "./TExp";
+         BoolTExp, NumTExp, StrTExp, TExp, VoidTExp, makeEmptyTupleTExp, makeNonEmptyTupleTExp, isNonTupleTExp } from "./TExp";
 import { isEmpty, allT, first, rest } from '../shared/list';
 import { Result, makeFailure, bind, makeOk, safe3, safe2, zipWithResult } from '../shared/result';
 import { parse as p } from "../shared/parser";
+import { isArray } from '../shared/type-predicates';
 
 // Purpose: Check that type expressions are equivalent
 // as part of a fully-annotated type check process of exp.
@@ -48,8 +49,29 @@ export const typeofExp = (exp: Parsed, tenv: TEnv): Result<TExp> =>
     isLetrecExp(exp) ? typeofLetrec(exp, tenv) :
     isDefineExp(exp) ? typeofDefine(exp, tenv) :
     isProgram(exp) ? typeofProgram(exp, tenv) :
+    isValuesExp(exp)? typeofValues(exp, tenv):
+    isLetvaluesExp(exp)? typeofletvalues(exp, tenv):
     // Skip isSetExp(exp) isLitExp(exp)
     makeFailure("Unknown type");
+
+    //ValuesExp {tag: "Values"; val: CExp[]; }
+export const typeofValues = (exps: ValuesExp, tenv: TEnv): Result<TExp> =>
+    isEmpty(exps.val)? makeOk(makeEmptyTupleTExp()):
+    allT(isNonTupleTExp, exps.val)? makeOk(makeNonEmptyTupleTExp(exps.val)):makeFailure("tuple in tuple - typesofvalues")
+        
+//LetvaluesExp {tag: "Let-values"; vars: VarDecl[]; val: ValuesExp; body: CExp[];}
+export const typeofletvalues = (exps: LetvaluesExp, tenv: TEnv): Result<TExp> =>{
+    const vars = map((b) => b.var, exps.vars);
+    //const vals = map((v : CExp) => typeofExp(v, tenv), exps.val.val);
+    const vals = exps.val.val;
+    const varTEs = map((b) => b.texp, exps.vars);
+    
+    const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, tenv),
+                                                        (typeOfVal: TExp) => checkEqualType(varTE, typeOfVal, exps)),
+                                    varTEs, vals);
+    return bind(constraints, _ => typeofExps(exps.body, makeExtendTEnv(vars, varTEs, tenv)));
+}
+
 
 // Purpose: Compute the type of a sequence of expressions
 // Check all the exps in a sequence - return type of last.
