@@ -208,8 +208,13 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     op === "let-values"  ? parseLetValuesExp(first(params), rest(params)):
     makeFailure("Never");
 
-export const parseValuesExp = (sexp: Sexp[]): Result<ValuesExp> =>{ //change sexps to be as array
-    const out =  bind(mapResult(parseL5CExp,sexp),(val: CExp[]) => makeOk(makeValuesExp(val)))
+export const parseValuesExp = (sexp: Sexp[]): Result<ValuesExp> => //change sexps to be as array
+    isArray(sexp)? safe2((val: CExp[]) => makeOk(makeValuesExp(val)))
+    (mapResult(parseL5CExp,sexp), makeOk("x") ) :
+    makeFailure("Bad Values not array\n");    
+/*
+    {const out =  bind(mapResult(parseL5CExp,sexp),(val: CExp[]) => makeOk(makeValuesExp(val)))
+    
     ///////////test//////////////////////////////////////////////////
     let toPrint; 
     if(isOk(out)){
@@ -220,13 +225,11 @@ export const parseValuesExp = (sexp: Sexp[]): Result<ValuesExp> =>{ //change sex
         toPrint = "fail"
         console.log(toPrint)
     }
-    return out
-    /*
-    isArray(sexp)? safe2((val: CExp[]) => makeOk(makeValuesExp(val)))
-                        (mapResult(parseL5CExp,sexp), makeOk("x") ) :
-    */ 
-                       // makeFailure("Bad Values not array\n");
-}
+    
+    return out}
+*/
+
+
 export const parseLetValuesExp = (vars: Sexp, rrest: Sexp[]): Result<LetvaluesExp> =>
     
     isArray(vars)? safe3((vars:VarDecl[], val: ValuesExp, body: CExp[])=>makeOk(makeLetvaluesExp(vars,val,body)))

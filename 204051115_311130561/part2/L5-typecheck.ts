@@ -10,7 +10,7 @@ import { isProcTExp, makeBoolTExp, makeNumTExp, makeProcTExp, makeStrTExp, makeV
          parseTE, unparseTExp,
          BoolTExp, NumTExp, StrTExp, TExp, VoidTExp, makeEmptyTupleTExp, makeNonEmptyTupleTExp, isNonTupleTExp } from "./TExp";
 import { isEmpty, allT, first, rest } from '../shared/list';
-import { Result, makeFailure, bind, makeOk, safe3, safe2, zipWithResult } from '../shared/result';
+import { Result, makeFailure, bind, makeOk, safe3, safe2, zipWithResult, mapResult, isOk } from '../shared/result';
 import { parse as p } from "../shared/parser";
 import { isArray } from '../shared/type-predicates';
 
@@ -55,10 +55,17 @@ export const typeofExp = (exp: Parsed, tenv: TEnv): Result<TExp> =>
     makeFailure("Unknown type");
 
     //ValuesExp {tag: "Values"; val: CExp[]; }
-export const typeofValues = (exps: ValuesExp, tenv: TEnv): Result<TExp> =>
-    isEmpty(exps.val)? makeOk(makeEmptyTupleTExp()):
-    allT(isNonTupleTExp, exps.val)? makeOk(makeNonEmptyTupleTExp(exps.val)):makeFailure("tuple in tuple - typesofvalues")
-        
+export const typeofValues = (exps: ValuesExp, tenv: TEnv): Result<TExp> =>{
+    let texpVal = mapResult((x:CExp)=>typeofExp(x, tenv),exps.val)
+
+    return isOk(texpVal)? 
+            isEmpty(texpVal)? 
+                makeOk(makeEmptyTupleTExp()):
+            allT(isNonTupleTExp, texpVal.value)? 
+                makeOk(makeNonEmptyTupleTExp(texpVal.value)):
+                makeFailure("tuple in tuple - typesofvalues"):
+        makeFailure(texpVal.message)
+}     
 //LetvaluesExp {tag: "Let-values"; vars: VarDecl[]; val: ValuesExp; body: CExp[];}
 export const typeofletvalues = (exps: LetvaluesExp, tenv: TEnv): Result<TExp> =>{
     const vars = map((b) => b.var, exps.vars);
