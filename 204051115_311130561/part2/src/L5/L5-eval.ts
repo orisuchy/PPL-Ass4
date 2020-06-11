@@ -1,7 +1,7 @@
 // L5-eval-box
 
 import { map, repeat, zipWith, values } from "ramda";
-import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp, isValuesExp, isLetValuesExp, ValuesExp, LetvaluesExp } from './L5-ast';
+import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp, isValuesExp, isLetValuesExp, ValuesExp, LetvaluesExp, BindingValues } from './L5-ast';
 import { Binding, VarDecl } from "./L5-ast";
 import { isBoolExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef } from "./L5-ast";
 import { parseL5Exp } from "./L5-ast";
@@ -31,7 +31,7 @@ export const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
     isLetrecExp(exp) ? evalLetrec(exp, env) :
     isSetExp(exp) ? evalSet(exp, env) :
     isValuesExp(exp)? evalValues(exp, env):
-    isLetValuesExp(exp)? evaLetValues(exp, env):
+   // isLetValuesExp(exp)? evaLetValues(exp, env):
     isAppExp(exp) ? safe2((proc: Value, args: Value[]) => applyProcedure(proc, args))
                         (applicativeEval(exp.rator, env), mapResult(rand => applicativeEval(rand, env), exp.rands)) :
     makeFailure(`Bad L5 AST ${exp}`);
@@ -43,7 +43,8 @@ export const isTrueValue = (x: Value): boolean =>
 const evalValues = (exp: ValuesExp, env: Env): Result <Tuple>=>
         bind(mapResult((x: CExp)=>applicativeEval(x, env) ,exp.val),
             (v:Value[])=>makeOk(makeTuple(v)));
-
+/*
+//Old version
 const evaLetValues = (exp:LetvaluesExp, env:Env): Result<Value>=>{
     const vars = map((x:VarDecl)=>x.var,exp.vars);
     const vals = mapResult((v : CExp) => applicativeEval(v, env), exp.val.val);
@@ -51,7 +52,15 @@ const evaLetValues = (exp:LetvaluesExp, env:Env): Result<Value>=>{
     //evalSequence(exp.body, makeExtEnv(vars, val, env))
     return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
 }
-
+*/
+/*
+const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
+    const vals = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
+    ///בעיה פה - מחזיר מערך כפול... צריך להבין איך לעשות תeval
+    const varDecls = map((b: BindingValues) => b.vars, exp.bindings)
+    const vars = map((v:VarDecl)=>v.var,);
+    return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)));
+*/
 
 const evalIf = (exp: IfExp, env: Env): Result<Value> =>
     bind(applicativeEval(exp.test, env),
