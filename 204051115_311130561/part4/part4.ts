@@ -30,21 +30,23 @@ const getTheOtherOne = (x:any,arr:any[2])=>{
     return 0;
 }
 
-export const slower = <T,T1,T2>(p1: Promise<any>, p2: Promise<any>):[number, string] =>{
+export const slower = <T,T1,T2>(p1: Promise<any>, p2: Promise<any>):Promise<[number, string]> =>{
 
   const pArr = [p1,p2];
   
   //const vals = Promise.all(([p1,p2]))
+ 
+  // yesterday it was "return new Promise< [0, "failed"]>" but that doesnt compile cuz it needs an executor function
+  return new Promise<[number, string]>( (resolve : any, reject: any) => {
     Promise.race([p1,p2]).then((value)=> {
-        Promise.all(([p1,p2])).then((valsArr)=>{
-          pArr[getTheOtherOne(value,valsArr)].then((val)=> {
-            console.log([getTheOtherOne(value,valsArr),val]+"\n" + "val type -"+typeof(val))
-            return [getTheOtherOne(value,valsArr),val]}).catch((v)=>{return [0, v]})
-          
-        }).catch((v)=>{return [0, v]})  
-    }).catch((v)=>{return [0, v]})  
-  
-  return [0, "failed"]
+      Promise.all(([p1,p2])).then((valsArr)=>{
+        pArr[getTheOtherOne(value,valsArr)].then((val)=> {
+          console.log([getTheOtherOne(value,valsArr),val]+"\n" + "val type -"+typeof(val))
+          resolve ([getTheOtherOne(value,valsArr),val])}).catch((v)=>{return [0, v]})
+      }).catch((v)=>{return [0, v]})  
+  }).catch((v)=>{return [0, v]}) 
+  })
+
   }
 /*
 const promise1 = new Promise(function(resolve, reject){
