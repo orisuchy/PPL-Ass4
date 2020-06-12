@@ -242,7 +242,7 @@ export const parseValuesExp = (sexp: Sexp[]): Result<ValuesExp> => //change sexp
 */
 
 export const parseLetValuesExp = (bindings: Sexp, body: Sexp[]): Result<LetvaluesExp> =>
-    isEmpty(body) ? makeFailure('Body of "let" cannot be empty') :
+    isEmpty(body) ? makeFailure('Body of "let-values" cannot be empty') :
     ! isGoodBindingValues(bindings) ? makeFailure(`Invalid Values bindings: ${JSON.stringify(bindings)}`) :
     safe2((bdgs: BindingValues[], body: CExp[]) => makeOk(makeLetValuesExp(bdgs, body)))
         (parseBindingValues(bindings), mapResult(parseL5CExp, body));

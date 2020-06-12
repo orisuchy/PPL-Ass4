@@ -59,10 +59,18 @@ const evaLetValues = (exp:LetvaluesExp, env:Env): Result<Value>=>{
 //LetvaluesExp {tag: "Let-values"; bindings:BindingValues[]; body: CExp[];}
 
 const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
+    const varDecls : VarDecl[][] = map((b: BindingValues) => b.vars, exp.bindings)
+    const vars = mapDoubleDecls(varDecls)
     const vals1: Result<SExpValue[]> = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
+    const valsTuples: Result<SExpValue[][]> = bind(vals1, (val: SExpValue[]) => mapResult(getTuples, val))
+    const vals = bind(valsTuples,(valt:SExpValue[][])=> makeOk(mapDoubleSExps(valt)))
+    return bind(vals, (vals:SExpValue[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
+
+    /*
     let vals2 : any = []
     isOk(vals1)? 
         vals2 = vals1.value.map(x => isValuesExp(x)? extractValues(x,env) : x ) : makeFailure("vals1 not ok")
+    
     //const vals1: Result<Value[]> = mapResult((b : BindingValues) => applicativeEval(b.val,env), exp.bindings);
 
     
@@ -72,13 +80,19 @@ const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
     const varDecls : VarDecl[][] = map((b: BindingValues) => b.vars, exp.bindings)
     const vars = mapDoubleDecls(varDecls)
     return bind(vals3, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)));
+    */
 }
-
+const getTuples = (v: SExpValue): Result<SExpValue[]> => 
+        isTuple(v) ? makeOk(v.list) : makeFailure(`non-tuple: ${JSON.stringify(v)}`)
+/*
 const extractValues = (v: ValuesExp, env: Env): Value[] =>{
      const extracted = mapResult((c:CExp)=>applicativeEval(c,env),v.val)
      return isOk(extracted)? extracted.value : [extracted.message] 
 }
-
+*/
+const mapDoubleSExps = (vals: SExpValue[][]): SExpValue[] => 
+    chain((x) => x, vals); 
+ 
 //is it right???
 const mapDoubleDecls = (exp: VarDecl[][]): string[]=>{
    const mapedVarDecls =  exp.reduce((acc,curr) => acc.concat(curr), [])
