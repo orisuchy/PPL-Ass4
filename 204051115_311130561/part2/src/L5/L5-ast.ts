@@ -208,6 +208,8 @@ export const parseL5CompoundCExp = (op: Sexp, params: Sexp[]): Result<CExp> =>
     parseAppExp(op, params);
 
 export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
+    op === "values" ? parseValuesExp(params) :
+    op === "let-values"  ? parseLetValuesExp(first(params), rest(params)):
     isEmpty(params) ? makeFailure("Empty args for special form") :
     op === "if" ? parseIfExp(params) :
     op === "lambda" ? parseProcExp(first(params), rest(params)) :
@@ -215,9 +217,8 @@ export const parseL5SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     op === "quote" ? parseLitExp(first(params)) :
     op === "letrec" ? parseLetrecExp(first(params), rest(params)) :
     op === "set!" ? parseSetExp(params) :
-    op === "values" ? parseValuesExp(params) :
-    op === "let-values"  ? parseLetValuesExp(first(params), rest(params)):
-    //op === "let-values"  ? parseLetValuesExp(first(params), rest(params)):
+    // op === "values" ? parseValuesExp(params) :
+    // op === "let-values"  ? parseLetValuesExp(first(params), rest(params)):
     makeFailure("Never");
 
 export const parseValuesExp = (sexp: Sexp[]): Result<ValuesExp> => //change sexps to be as array

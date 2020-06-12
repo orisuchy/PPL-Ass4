@@ -63,7 +63,7 @@ const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
     const vars = mapDoubleDecls(varDecls)
     const vals1: Result<SExpValue[]> = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
     const valsTuples: Result<SExpValue[][]> = bind(vals1, (val: SExpValue[]) => mapResult(getTuples, val))
-    const vals = bind(valsTuples,(valt:SExpValue[][])=> makeOk(mapDoubleSExps(valt)))
+    const vals = bind(valsTuples,(valt:SExpValue[][]) => makeOk(mapDoubleSExps(valt)))
     return bind(vals, (vals:SExpValue[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
 
     /*

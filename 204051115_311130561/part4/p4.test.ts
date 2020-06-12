@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { f, g, h } from './part4';
-
+import { f, g, h, slower } from './part4';
+/*
 describe('promises a', () => {
     it('test f - should return 1', async () => {
         expect(await f(1)).to.equal(1);
@@ -22,7 +22,7 @@ describe('promises a', () => {
     });
     it('test h - should return 1', async () => {
         expect(await h(1)).to.equal(1);
-    });s
+    });
     it('test h - 2 should return 0.25', async () => {
         expect(await h(2)).to.equal(0.25);
     });
@@ -30,12 +30,13 @@ describe('promises a', () => {
         await h(0).catch(error => expect(error).to.be.an("error"));
     });
 });
-/*
+*/
+
 describe('promises 2', () => {
     it('both fail', async () => {  
         const first = Promise.reject(new Error("the end has come"));
         const second = Promise.reject(new Error("failing")); 
-        await slower(first, second).catch(error => expect(error).to.be.an("error"));
+        await slower(first, second).catch((error: any) => expect(error).to.be.an("error"));
     });
     it('the first', async () => {
         const lateFuncProm = new Promise((resolve) => 
@@ -52,4 +53,3 @@ describe('promises 2', () => {
             .to.deep.equal([1, 'i\'m late']);
     });
 });
-*/
