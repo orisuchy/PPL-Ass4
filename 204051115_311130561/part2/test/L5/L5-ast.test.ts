@@ -77,11 +77,11 @@ it('parses "values" primitive operation expressions', () => {
 
 
 it('parses "let-values" expressions', () => {
-    expect(p("(let-values (((a b) (values 1 2))) (if b a (+ a 1)))")).to.satisfy(isOkT(isLetValuesExp));
+    expect(p("(let-values (( (a b) (values 1 2) )) (if b a (+ a 1)))")).to.satisfy(isOkT(isLetValuesExp));
     });
-
+// [a,b,values,1,2]
 it('parses "let-values" expressions', () => {
-    expect(p("(let-values (((a b) (values 1 2)) ((c d e)  (values 1 (lambda (x) x x) #t) )) 5)")).to.satisfy(isOkT(isLetValuesExp));
+    expect(p("(let-values (( (a b) (values 1 2)) ((c d e)  (values 1 (lambda (x) x x) #t) )) 5)")).to.satisfy(isOkT(isLetValuesExp));
      });
     
 //***************************** */

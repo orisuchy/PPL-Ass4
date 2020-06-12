@@ -103,7 +103,7 @@ export interface LetvaluesExp {tag: "Let-values"; bindings:BindingValues[]; body
 export const makeLetValuesExp = (bindings:BindingValues[], body: CExp[]): LetvaluesExp => ({tag: "Let-values", bindings: bindings, body: body});
 export const isLetValuesExp = (x: any): x is LetvaluesExp => x.tag === "Let-values";
 
-export interface BindingValues {tag: "BindingValues"; vars: VarDecl[]; val: CExp; }
+export interface BindingValues {tag: "BindingValues"; vars: VarDecl[]; val: CExp; } // the CExp is ValueExp
 export const makeBindingValues = (vars: VarDecl[], val: CExp): BindingValues =>
     ({tag: "BindingValues", vars: vars, val: val});
 export const isBindingValues = (x: any): x is BindingValues => x.tag === "BindingValues";
@@ -240,11 +240,13 @@ export const parseValuesExp = (sexp: Sexp[]): Result<ValuesExp> => //change sexp
     
     return out}
 */
+
 export const parseLetValuesExp = (bindings: Sexp, body: Sexp[]): Result<LetvaluesExp> =>
     isEmpty(body) ? makeFailure('Body of "let" cannot be empty') :
     ! isGoodBindingValues(bindings) ? makeFailure(`Invalid Values bindings: ${JSON.stringify(bindings)}`) :
     safe2((bdgs: BindingValues[], body: CExp[]) => makeOk(makeLetValuesExp(bdgs, body)))
         (parseBindingValues(bindings), mapResult(parseL5CExp, body));
+
 
 /*
 //Old version - no bindings

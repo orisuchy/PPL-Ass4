@@ -9,7 +9,7 @@ import { isAppExp, isDefineExp, isIfExp, isLetrecExp, isLetExp,
          isProcExp, isSetExp } from "./L5-ast";
 import { applyEnv, applyEnvBdg, globalEnvAddBinding, makeExtEnv, setFBinding,
          theGlobalEnv, Env, FBinding } from "./L5-env";
-import { isClosure, makeClosure, Closure, Value, makeTuple, Tuple } from "./L5-value";
+import { isClosure, makeClosure, Closure, Value, makeTuple, Tuple, SExpValue } from "./L5-value";
 import { isEmpty, first, rest } from '../shared/list';
 import { Result, makeOk, makeFailure, mapResult, safe2, bind } from "../shared/result";
 import { parse as p } from "../shared/parser";
@@ -31,7 +31,7 @@ export const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
     isLetrecExp(exp) ? evalLetrec(exp, env) :
     isSetExp(exp) ? evalSet(exp, env) :
     isValuesExp(exp)? evalValues(exp, env):
-   // isLetValuesExp(exp)? evaLetValues(exp, env):
+    isLetValuesExp(exp)? evaLetValues(exp, env):
     isAppExp(exp) ? safe2((proc: Value, args: Value[]) => applyProcedure(proc, args))
                         (applicativeEval(exp.rator, env), mapResult(rand => applicativeEval(rand, env), exp.rands)) :
     makeFailure(`Bad L5 AST ${exp}`);
@@ -53,15 +53,26 @@ const evaLetValues = (exp:LetvaluesExp, env:Env): Result<Value>=>{
     return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
 }
 */
-/*
-const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
-    const vals = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
-    ///בעיה פה - מחזיר מערך כפול... צריך להבין איך לעשות תeval
-    const varDecls = map((b: BindingValues) => b.vars, exp.bindings)
-    const vars = map((v:VarDecl)=>v.var,);
-    return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)));
-*/
 
+const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
+    const vals: Result<SExpValue[]> = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
+    const varDecls : VarDecl[][] = map((b: BindingValues) => b.vars, exp.bindings)
+    const vars = mapDoubleDecls(varDecls)
+    return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)));
+}
+//is it right???
+const mapDoubleDecls = (exp: VarDecl[][]): string[]=>{
+   const mapedVarDecls =  exp.reduce((acc,curr) => acc.concat(curr), [])
+   return (map((v:VarDecl)=>v.var,mapedVarDecls))  
+}
+    //map((v:VarDecl[])=>map((s:VarDecl)=>s.var,v),exp)
+/*
+// We want the following as an array of the numbers:
+let a = [{group: 1, numbers:[1, 2, 3]}, {group: 2, numbers:[4, 5, 6]}];
+a.map(x => x.numbers).reduce((acc,curr) => acc.concat(curr), [])
+[ 1, 2, 3, 4, 5, 6 ]
+*/
+    
 const evalIf = (exp: IfExp, env: Env): Result<Value> =>
     bind(applicativeEval(exp.test, env),
          (test: Value) => isTrueValue(test) ? applicativeEval(exp.then, env) : applicativeEval(exp.alt, env));
