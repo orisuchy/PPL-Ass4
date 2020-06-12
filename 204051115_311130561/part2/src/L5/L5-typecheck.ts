@@ -4,7 +4,7 @@ import { equals, map, zipWith } from 'ramda';
 import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLetrecExp, isLetExp, isNumExp,
          isPrimOp, isProcExp, isProgram, isStrExp, isVarRef, parseL5Exp, unparse,
          AppExp, BoolExp, DefineExp, Exp, IfExp, LetrecExp, LetExp, NumExp,
-         Parsed, PrimOp, ProcExp, Program, StrExp, isValuesExp, isLetValuesExp, ValuesExp, LetvaluesExp, CExp, BindingValues } from "./L5-ast";
+         Parsed, PrimOp, ProcExp, Program, StrExp, isValuesExp, isLetValuesExp, ValuesExp, LetvaluesExp, CExp, BindingValues, VarDecl } from "./L5-ast";
 import { applyTEnv, makeEmptyTEnv, makeExtendTEnv, TEnv } from "./TEnv";
 import { isProcTExp, makeBoolTExp, makeNumTExp, makeProcTExp, makeStrTExp, makeVoidTExp,
          parseTE, unparseTExp,
@@ -84,16 +84,23 @@ export const typeofletvalues = (exps: LetvaluesExp, tenv: TEnv): Result<TExp> =>
 */
 ///אהההההההההה
 export const typeofletvalues = (exps: LetvaluesExp, tenv: TEnv): Result<TExp> =>{
-    const vars = map((b: BindingValues) => b.vars, exps.bindings);
+    const varDecls = map((b: BindingValues) => b.vars, exps.bindings);
+    const varsArr = varDecls.reduce((acc,curr) => acc.concat(curr), [])
+    const varsString = mapDoubleDecls(varDecls)
     //const vals = map((v : CExp) => typeofExp(v, tenv), exps.val.val);
     const vals = map((b: BindingValues) => b.val, exps.bindings);
-    const varTEs = map((b) => b.texp, exps.vars);
-    
+    const varTEs = map((b) => b.texp, varsArr);
     const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, tenv),
                                                         (typeOfVal: TExp) => checkEqualType(varTE, typeOfVal, exps)),
                                     varTEs, vals);
-    return bind(constraints, _ => typeofExps(exps.body, makeExtendTEnv(vars, varTEs, tenv)));
+    return bind(constraints, _ => typeofExps(exps.body, makeExtendTEnv(varsString, varTEs, tenv)));
 }
+
+const mapDoubleDecls = (exp: VarDecl[][]): string[]=>{
+    const mapedVarDecls =  exp.reduce((acc,curr) => acc.concat(curr), [])
+    return (map((v:VarDecl)=>v.var,mapedVarDecls))  
+ }
+
 // Purpose: Compute the type of a sequence of expressions
 // Check all the exps in a sequence - return type of last.
 // Pre-conditions: exps is not empty.

@@ -22,7 +22,7 @@ describe('promises a', () => {
     });
     it('test h - should return 1', async () => {
         expect(await h(1)).to.equal(1);
-    });
+    });s
     it('test h - 2 should return 0.25', async () => {
         expect(await h(2)).to.equal(0.25);
     });

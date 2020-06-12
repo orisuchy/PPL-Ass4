@@ -1,7 +1,7 @@
 // L5-eval-box
 
-import { map, repeat, zipWith, values } from "ramda";
-import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp, isValuesExp, isLetValuesExp, ValuesExp, LetvaluesExp, BindingValues } from './L5-ast';
+import { map, repeat, zipWith, values, chain } from "ramda";
+import { CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp, isCExp, isValuesExp, isLetValuesExp, ValuesExp, LetvaluesExp, BindingValues, unparse } from './L5-ast';
 import { Binding, VarDecl } from "./L5-ast";
 import { isBoolExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef } from "./L5-ast";
 import { parseL5Exp } from "./L5-ast";
@@ -9,11 +9,13 @@ import { isAppExp, isDefineExp, isIfExp, isLetrecExp, isLetExp,
          isProcExp, isSetExp } from "./L5-ast";
 import { applyEnv, applyEnvBdg, globalEnvAddBinding, makeExtEnv, setFBinding,
          theGlobalEnv, Env, FBinding } from "./L5-env";
-import { isClosure, makeClosure, Closure, Value, makeTuple, Tuple, SExpValue } from "./L5-value";
+import { isClosure, makeClosure, Closure, Value, makeTuple, Tuple, SExpValue, isTuple, valueToString } from "./L5-value";
 import { isEmpty, first, rest } from '../shared/list';
-import { Result, makeOk, makeFailure, mapResult, safe2, bind } from "../shared/result";
+import { Result, makeOk, makeFailure, mapResult, safe2, bind, isOk } from "../shared/result";
 import { parse as p } from "../shared/parser";
 import { applyPrimitive } from "./evalPrimitive";
+import { isNonEmptyTupleTExp } from "./TExp";
+import { isArray } from "util";
 
 // ========================================================
 // Eval functions
@@ -53,13 +55,30 @@ const evaLetValues = (exp:LetvaluesExp, env:Env): Result<Value>=>{
     return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
 }
 */
+//BindingValues {tag: "BindingValues"; vars: VarDecl[]; val: CExp; }
+//LetvaluesExp {tag: "Let-values"; bindings:BindingValues[]; body: CExp[];}
 
 const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
-    const vals: Result<SExpValue[]> = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
+    const vals1: Result<SExpValue[]> = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
+    let vals2 : any = []
+    isOk(vals1)? 
+        vals2 = vals1.value.map(x => isValuesExp(x)? extractValues(x,env) : x ) : makeFailure("vals1 not ok")
+    //const vals1: Result<Value[]> = mapResult((b : BindingValues) => applicativeEval(b.val,env), exp.bindings);
+
+    
+    let vals3:any = []
+    vals3 = vals2.reduce((acc:any,curr:any) => acc.concat(curr), [])
+
     const varDecls : VarDecl[][] = map((b: BindingValues) => b.vars, exp.bindings)
     const vars = mapDoubleDecls(varDecls)
-    return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)));
+    return bind(vals3, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)));
 }
+
+const extractValues = (v: ValuesExp, env: Env): Value[] =>{
+     const extracted = mapResult((c:CExp)=>applicativeEval(c,env),v.val)
+     return isOk(extracted)? extracted.value : [extracted.message] 
+}
+
 //is it right???
 const mapDoubleDecls = (exp: VarDecl[][]): string[]=>{
    const mapedVarDecls =  exp.reduce((acc,curr) => acc.concat(curr), [])
