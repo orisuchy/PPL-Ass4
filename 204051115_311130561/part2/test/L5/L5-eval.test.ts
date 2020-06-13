@@ -6,7 +6,7 @@ import { isClosure, makeCompoundSExp,makeTuple } from '../../src/L5/L5-value';
 import { makeOk, bind, isOkT, isFailure } from '../../src/shared/result';
 
 describe('L5 Eval', () => {
-    /*
+
     it('evaluates data type literals', () => {
         expect(evalParse("1")).to.deep.equal(makeOk(1));
         expect(evalParse("#t")).to.deep.equal(makeOk(true));
@@ -107,7 +107,7 @@ describe('L5 Eval', () => {
 
 
     });
-    */
+
  //added 
     it('evaluates "let-values" expressions', () => {
         expect(bind(parseL5("(L5 (let-values  ((( x y) (values 1 2)))(+ x y)) )"), evalProgram)).to.deep.equal(makeOk(3));
@@ -117,7 +117,7 @@ describe('L5 Eval', () => {
 
        
     });
-/*
+
 // //added  example 3 with value
     it('evaluates "define" expressions', () => {
         expect(bind(parseL5("(L5 (define x 1) (+ x x))"), evalProgram)).to.deep.equal(makeOk(2));
@@ -231,5 +231,5 @@ describe('L5 Eval', () => {
             (letrec (((p : (number * number -> number)) (lambda ((x : number) (y : number)) (+ x y))))
                 (p 1 2))`)).to.deep.equal(makeOk(3));
     });
-    */
+
 });

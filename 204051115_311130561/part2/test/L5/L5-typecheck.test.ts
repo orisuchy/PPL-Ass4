@@ -7,7 +7,7 @@ import { makeOk, bind } from '../../src/shared/result';
 import { parse as p } from "../../src/shared/parser";
 
 describe('L5 Type Checker', () => {
-/*
+
     describe('parseTE', () => {
         it('parses atoms', () => {
             expect(parseTE("number")).to.deep.equal(makeOk(makeNumTExp()));
@@ -22,23 +22,23 @@ describe('L5 Type Checker', () => {
             expect(parseTE("(T * T -> boolean)")).to.deep.equal(makeOk(makeProcTExp([makeTVar("T"), makeTVar("T")], makeBoolTExp())));
             expect(parseTE("(number -> (number -> number))")).to.deep.equal(makeOk(makeProcTExp([makeNumTExp()], makeProcTExp([makeNumTExp()], makeNumTExp()))));
         });
-*/
+
 // added 
         it('parses Tuple', () => {
             expect(parseTE("(Empty)")).to.deep.equal(makeOk(makeEmptyTupleTExp()));
             expect(parseTE("(boolean * number * boolean * number)")).to.deep.equal(makeOk(makeNonEmptyTupleTExp([makeBoolTExp(),makeNumTExp(),makeBoolTExp(),makeNumTExp()])));
             expect(parseTE("(boolean * (T * T -> boolean))")).to.deep.equal(makeOk(makeNonEmptyTupleTExp([makeBoolTExp(), makeProcTExp([makeTVar("T"), makeTVar("T")], makeBoolTExp())])));
         });
-/*
+
 
         it('parses "void" and "Empty"', () => {
             expect(parseTE("void")).to.deep.equal(makeOk(makeVoidTExp()));
             expect(parseTE("(Empty -> void)")).to.deep.equal(makeOk(makeProcTExp([], makeVoidTExp())));
         });
     });
-*/
+
     describe('unparseTExp', () => {
-/*
+
         it('unparses atoms', () => {
             expect(unparseTExp(makeNumTExp())).to.deep.equal(makeOk("number"));
             expect(unparseTExp(makeBoolTExp())).to.deep.equal(makeOk("boolean"));
@@ -53,7 +53,7 @@ describe('L5 Type Checker', () => {
             expect(unparseTExp(makeProcTExp([makeNumTExp()], makeProcTExp([makeNumTExp()], makeNumTExp())))).to.deep.equal(makeOk("(number -> (number -> number))"));
         });
 // added
-*/
+
         it('unparses Tuple', () => {
             expect(unparseTExp(makeEmptyTupleTExp())).to.deep.equal(makeOk("(Empty)"));
             expect(unparseTExp(makeNonEmptyTupleTExp([makeBoolTExp(),makeNumTExp(),makeBoolTExp(),makeNumTExp()]))).to.deep.equal(makeOk("(boolean * number * boolean * number)"));
@@ -64,7 +64,7 @@ describe('L5 Type Checker', () => {
     });
 
     describe('L5typeof', () => {
-/*
+
         it('returns the types of atoms', () => {
             expect(L5typeof("5")).to.deep.equal(makeOk("number"));
             expect(L5typeof("#t")).to.deep.equal(makeOk("boolean"));
@@ -97,7 +97,7 @@ describe('L5 Type Checker', () => {
             expect(L5typeof("(lambda((f : (number -> number))) : number (f 2))")).to.deep.equal(makeOk("((number -> number) -> number)"));
             expect(L5typeof("(lambda((x : number)) : number (let (((y : number) x)) (+ x y)))")).to.deep.equal(makeOk("(number -> number)"));
         });
-*/
+
     // added *******************************
     it('returns the type of "values" expressions', () => {
         expect(L5typeof("(values 1 2 3)")).to.deep.equal(makeOk("(number * number * number)"));
@@ -112,7 +112,7 @@ describe('L5 Type Checker', () => {
 
  
     //***************************************** 
-/*
+
 
         it('returns the type of "let" expressions', () => {
             expect(L5typeof("(let (((x : number) 1)) (* x 2))")).to.deep.equal(makeOk("number"));
@@ -184,7 +184,7 @@ describe('L5 Type Checker', () => {
                                          (lambda ((x : T1)) : (T1 -> number)
                                            (lambda((y : T1)) : number 5)))`)).to.deep.equal(makeOk("void"));
         });
-        */
+        
     });
 
 });

@@ -8,7 +8,7 @@ import { parse as parseSexp } from "../../src/shared/parser";
 const p = (x: string): Result<Exp> => bind(parseSexp(x), parseL5Exp);
 
 describe('L5 Parser', () => {
-/*
+
     it('parses atomic expressions', () => {
         expect(p("1")).to.satisfy(isOkT(isNumExp));
         expect(p("#t")).to.satisfy(isOkT(isBoolExp));
@@ -60,7 +60,7 @@ describe('L5 Parser', () => {
     });
 
 
-*/
+
 //added tests *****************************
 it('parses "values" specail form expressions', () => {
     expect(p(" (values 1 2 3)")).to.satisfy(isOkT(isValuesExp));
@@ -85,7 +85,7 @@ it('parses "let-values" expressions', () => {
      });
     
 //***************************** */
-/*
+
     it('parses literal expressions', () => {
         expect(p("'a")).to.satisfy(isOkT(isLitExp));
         expect(p("'()")).to.satisfy(isOkT(isLitExp));
@@ -103,13 +103,13 @@ it('parses "let-values" expressions', () => {
     it('parses "set!" expressions', () => {
         expect(p("(set! x 1)")).to.satisfy(isOkT(isSetExp));
     });
-    */
+
 });
 
 describe('L5 Unparse', () => {
 
     const roundTrip = (x: string): Result<string> => bind(p(x), unparse);
-/*
+
     it('unparses "define" expressions with type annotations', () => {
         const define = "(define (a : number) 1)";
         expect(roundTrip(define)).to.deep.equal(makeOk(define));
@@ -124,7 +124,7 @@ describe('L5 Unparse', () => {
         const let1 = "(let (((a : boolean) #t) ((b : number) 2)) (if a b (+ b b)))";
         expect(roundTrip(let1)).to.deep.equal(makeOk(let1));
     });
-*/
+
  //added tests *****************************
 
     it('unparses "values" expressions without type annotations', () => {
@@ -141,10 +141,10 @@ describe('L5 Unparse', () => {
         expect(roundTrip(let1)).to.deep.equal(makeOk(let1));
     });
 // *****************************
-/*
+
     it('unparses "letrec" expressions', () => {
         const letrec = "(letrec (((p : (number * number -> number)) (lambda ((x : number) (y : number)) (+ x y)))) (p 1 2))";
         expect(roundTrip(letrec)).to.deep.equal(makeOk(letrec));
     });
-*/
+
 });

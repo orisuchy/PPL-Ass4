@@ -66,22 +66,7 @@ export const typeofValues = (exps: ValuesExp, tenv: TEnv): Result<TExp> =>{
                 makeFailure("tuple in tuple - typesofvalues"):
         makeFailure(texpVal.message)
 }     
-//LetvaluesExp {tag: "Let-values"; vars: VarDecl[]; val: ValuesExp; body: CExp[];}
 
-/*
-//old version - before bindings
-export const typeofletvalues = (exps: LetvaluesExp, tenv: TEnv): Result<TExp> =>{
-    const vars = map((b) => b.var, exps.vars);
-    //const vals = map((v : CExp) => typeofExp(v, tenv), exps.val.val);
-    const vals = exps.val.val;
-    const varTEs = map((b) => b.texp, exps.vars);
-    
-    const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, tenv),
-                                                        (typeOfVal: TExp) => checkEqualType(varTE, typeOfVal, exps)),
-                                    varTEs, vals);
-    return bind(constraints, _ => typeofExps(exps.body, makeExtendTEnv(vars, varTEs, tenv)));
-}
-*/
 
 export const typeofletvalues = (exps: LetvaluesExp, tenv: TEnv): Result<TExp> =>{
     const varDecls = map((b: BindingValues) => b.vars, exps.bindings);
@@ -90,21 +75,8 @@ export const typeofletvalues = (exps: LetvaluesExp, tenv: TEnv): Result<TExp> =>
     
     const vals = map((b: BindingValues) => b.val, exps.bindings);
     const varTEs = map((b) => b.texp, varsArr);
-    // const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, tenv),
-    //                                                     (typeOfVal: TExp) => checkEqualType(varTE, typeOfVal, exps)),
-    //                                 varTEs, vals);
 
-    // console.log("\nvardecls: " + map(x=>console.log(x)+"\n",varDecls))
-    // console.log("varsArr: " + map(x=>console.log(x)+"\n",varsArr))
-    // console.log("varsString: " + varsString+"\n")
-    // console.log("vals: " + map(x=>console.log(x)+"\n",vals))
-    // console.log("VarTEs: " + map(x=>console.log(x)+"\n\n",varTEs))
-    
-    // isOk(constraints)? console.log(constraints):console.log("constraints failed")
-    /////////////////////////////////// Do we need constraints????
-    // if (varsString.length != varTEs.length)
-    //     return makeFailure ("not same length vals and vars")
-    return /*bind(constraints, _ => */typeofExps(exps.body, makeExtendTEnv(varsString, varTEs, tenv));
+    return typeofExps(exps.body, makeExtendTEnv(varsString, varTEs, tenv));
 }
 
 const mapDoubleDecls = (exp: VarDecl[][]): string[]=>{

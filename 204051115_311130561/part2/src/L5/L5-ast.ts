@@ -87,18 +87,10 @@ export interface Program {tag: "Program"; exps: Exp[]; }
 export const makeProgram = (exps: Exp[]): Program => ({tag: "Program", exps: exps});
 export const isProgram = (x: any): x is Program => x.tag === "Program";
 
-//values - for example (values 1 2 3)
 export interface ValuesExp {tag: "Values"; val: CExp[]; }
 export const makeValuesExp = (val: CExp[]): ValuesExp => ({tag: "Values", val: val});
 export const isValuesExp = (x: any): x is ValuesExp => x.tag === "Values";
 
-//Let-values - for example (let-values (a b c) (values 1 2 3))
-/*
-//Old version - no bindings
-export interface LetvaluesExp {tag: "Let-values"; vars: VarDecl[]; val: ValuesExp; body: CExp[];}
-export const makeLetValuesExp = (vars: VarDecl[], val: ValuesExp, body: CExp[]): LetvaluesExp => ({tag: "Let-values", vars: vars, val: val, body: body});
-export const isLetValuesExp = (x: any): x is LetvaluesExp => x.tag === "Let-values";
-*/
 export interface LetvaluesExp {tag: "Let-values"; bindings:BindingValues[]; body: CExp[];}
 export const makeLetValuesExp = (bindings:BindingValues[], body: CExp[]): LetvaluesExp => ({tag: "Let-values", bindings: bindings, body: body});
 export const isLetValuesExp = (x: any): x is LetvaluesExp => x.tag === "Let-values";
@@ -225,22 +217,7 @@ export const parseValuesExp = (sexp: Sexp[]): Result<ValuesExp> => //change sexp
     isArray(sexp)? safe2((val: CExp[]) => makeOk(makeValuesExp(val)))
     (mapResult(parseL5CExp,sexp), makeOk("x") ) :
     makeFailure("Bad Values not array\n");    
-/*
-    {const out =  bind(mapResult(parseL5CExp,sexp),(val: CExp[]) => makeOk(makeValuesExp(val)))
-    
-    ///////////test//////////////////////////////////////////////////
-    let toPrint; 
-    if(isOk(out)){
-        toPrint = out.value.val
-        console.log(map((c:CExp)=>c.tag,toPrint).join(", "))
-    }
-    else{
-        toPrint = "fail"
-        console.log(toPrint)
-    }
-    
-    return out}
-*/
+
 
 export const parseLetValuesExp = (bindings: Sexp, body: Sexp[]): Result<LetvaluesExp> =>
     isEmpty(body) ? makeFailure('Body of "let-values" cannot be empty') :
@@ -249,39 +226,14 @@ export const parseLetValuesExp = (bindings: Sexp, body: Sexp[]): Result<Letvalue
         (parseBindingValues(bindings), mapResult(parseL5CExp, body));
 
 
-/*
-//Old version - no bindings
-export const parseLetValuesExp = (vars: Sexp, rrest: Sexp[]): Result<LetvaluesExp> =>{
-    return isArray(vars)? safe3((vars:VarDecl[], val: ValuesExp, body: CExp[])=>makeOk(makeLetValuesExp(vars,val,body)))
-                        (mapResult(parseVarDecl,vars), 
-                         parseValuesExp([first(rrest)]), //changed to be array
-                         mapResult(parseL5CExp, rest(rrest))) :
-    makeFailure("Bad let-values\n");
-    
-}
-*/
+
 const isGoodBindingValues = (bindings: Sexp): bindings is [Sexp[], Sexp][] =>
     isArray(bindings) && allT(isArray, bindings) && allT(isArray, map(first, bindings));
 
 const parseBindingValues = (bindings: [Sexp[], Sexp][]): Result<BindingValues[]> =>
     safe2((vds: VarDecl[][], vals: CExp[]) =>makeOk(zipWith(makeBindingValues, vds, vals)))
         (mapResult(parseVarDeclArr, map(b => b[0], bindings)), mapResult(parseL5CExp, map(b => b[1], bindings)));
-/*
-const isEqualLength = (vds: VarDecl[][], vals: CExp[]): boolean =>{
-  //  const valuesVals = mapResult((v:CExp)=>isValuesExp(v)? makeOk(v.val): makeFailure("not values exp"),vals)
-    //const valuesVals = filter(isValuesExp,vals)
-    const valuesVals: ValuesExp[] = map(getValues, vals)
-    let check = true;
-    let i;
-    for (i = 0; i < vds.length; i++){
-        if (vds[i].length !== valuesVals[i].val.length)
-            check = false;
-    }
-    return check
-}
-const getValues = (v: CExp): ValuesExp => 
-        isValuesExp(v) ? v : makeValuesExp([])
-*/
+
 const parseVarDeclArr = (arr: Sexp[]):Result<VarDecl[]>=>
     mapResult(parseVarDecl, arr);
 
@@ -487,8 +439,6 @@ const unparseSetExp = (se: SetExp): Result<string> =>
 
 const unparseValues = (val: ValuesExp) : Result<string> =>
         bind(unparseLExps(val.val),(vals: string) => makeOk(`(values ${vals})`))
-    /* safe2((vals: string) => makeOk(`(values ${vals})`))
-        (unparseLExps(val.val), makeOk("x")) */
         
 const unparseLetValues = (le: LetvaluesExp) : Result<string> => 
     safe2((vars: string, body: string) => makeOk(`(let-values (${vars}) ${body})`))

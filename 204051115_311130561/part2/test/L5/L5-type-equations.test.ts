@@ -1,4 +1,4 @@
-/*
+
 import { expect } from 'chai';
 import { makeTVar } from '../../src/L5/TExp';
 import { makeSub } from '../../src/L5/L5-substitution-adt';
@@ -90,4 +90,3 @@ describe('L5 Type Equations', () => {
         expect(verifyTeOfExprWithEquations("(lambda () (lambda (x) (+ (+ x 1) (+ x 1))))", "(Empty -> (number -> number))")).to.deep.equal(makeOk(true));
     });
 });
-*/

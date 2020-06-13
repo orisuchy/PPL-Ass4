@@ -85,7 +85,6 @@ export interface EmptyTupleTExp { tag: "EmptyTupleTExp" }
 export const makeEmptyTupleTExp = (): EmptyTupleTExp => ({tag: "EmptyTupleTExp"});
 export const isEmptyTupleTExp = (x: any): x is EmptyTupleTExp => x.tag === "EmptyTupleTExp";
 
-// NonEmptyTupleTExp(TEs: NonTupleTExp[])
 export interface NonEmptyTupleTExp { tag: "NonEmptyTupleTExp"; TEs: NonTupleTExp[]; }
 export const makeNonEmptyTupleTExp = (tes: NonTupleTExp[]): NonEmptyTupleTExp =>
     ({tag: "NonEmptyTupleTExp", TEs: tes});
@@ -200,14 +199,6 @@ const parseTupleTExp = (texps: Sexp[]): Result<TExp[]> => {
         isEmpty(rest(texps)) ? makeOk(texps) :
         texps[1] !== '*' ? makeFailure(`Parameters of procedure type must be separated by '*': ${texps}`) :
         bind(splitEvenOdds(texps.slice(2)), (sexps: Sexp[]) => makeOk([texps[0], ...sexps]));
-
-
-        /*
-       1)  N * N * S
-       2)  N * S
-       3) OK<[N, ,N ,S]>
-        */
-
     return isEmptyTuple(texps) ? makeOk([]) : bind(splitEvenOdds(texps),
                                                    (argTEs: Sexp[]) => mapResult(parseTExp, argTEs));
 }

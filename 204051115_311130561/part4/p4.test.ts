@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { f, g, h, slower } from './part4';
-/*
+
 describe('promises a', () => {
     it('test f - should return 1', async () => {
         expect(await f(1)).to.equal(1);
@@ -30,7 +30,7 @@ describe('promises a', () => {
         await h(0).catch(error => expect(error).to.be.an("error"));
     });
 });
-*/
+
 
 describe('promises 2', () => {
     it('both fail', async () => {  

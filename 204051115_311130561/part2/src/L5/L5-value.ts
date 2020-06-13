@@ -93,10 +93,3 @@ export const valueToString = (val: Value): string =>
     isTuple(val) ? '('+val.list.join(" ")+')':
     "Error: unknown value type "+val
 
-    
-/*
-//test
-let array = [1, 2, 3].map(makeNumExp);
-let arrayTuple = makeTuple(array);
-console.log(valueToString(arrayTuple))
-*/

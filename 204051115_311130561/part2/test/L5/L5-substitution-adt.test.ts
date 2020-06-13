@@ -1,4 +1,4 @@
-/*
+
 import { expect } from 'chai';
 import * as S from "../../src/L5/L5-substitution-adt";
 import { makeTVar, parseTE, unparseTExp, TExp } from "../../src/L5/TExp";
@@ -105,4 +105,3 @@ describe('L5 Substitution ADT', () => {
         });
     });
 });
-*/

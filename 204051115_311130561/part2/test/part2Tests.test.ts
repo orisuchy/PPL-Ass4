@@ -99,7 +99,11 @@ describe('L4 Normal Eval', () => {
     it('test evalParse 5', () => {
         expect(evalParse("(let-values (((a) (values 1 2)) ((b c) (values 3))) (+ a b c))")).satisfy(isFailure);
     })
-
+    //       0    1
+    //vars:[[a],[b,c]]
+    //vals:[[1,2],[3]]
+    //
+    //
     it('test evalParse 6', () => {
         expect(bind(parseL5("(L5 (define x 7) (let-values (((a b c) (values 1 2 3)) ((d e f) (values 4 5 6))) (+ x b c) (+ (let-values (((y t) (values 4 5))) (* t y x)) (+ f d e))))"), evalProgram))
         .to.deep.equal(makeOk(155));

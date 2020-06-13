@@ -1,4 +1,4 @@
-/*
+
 import { expect } from 'chai';
 import { inferTypeOf, typeofExp } from "../../src/L5/L5-typeinference";
 import { parseL5Exp, Exp } from "../../src/L5/L5-ast";
@@ -120,4 +120,3 @@ describe('L5 Type Inference', () => {
         });
     });
 });
-*/

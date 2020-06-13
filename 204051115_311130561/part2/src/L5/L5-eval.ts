@@ -41,22 +41,10 @@ export const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
 export const isTrueValue = (x: Value): boolean =>
     ! (x === false);
 
-////////check if need environment
 const evalValues = (exp: ValuesExp, env: Env): Result <Tuple>=>
         bind(mapResult((x: CExp)=>applicativeEval(x, env) ,exp.val),
             (v:Value[])=>makeOk(makeTuple(v)));
-/*
-//Old version
-const evaLetValues = (exp:LetvaluesExp, env:Env): Result<Value>=>{
-    const vars = map((x:VarDecl)=>x.var,exp.vars);
-    const vals = mapResult((v : CExp) => applicativeEval(v, env), exp.val.val);
-    //const val = exp.val.val;
-    //evalSequence(exp.body, makeExtEnv(vars, val, env))
-    return bind(vals, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
-}
-*/
-//BindingValues {tag: "BindingValues"; vars: VarDecl[]; val: CExp; }
-//LetvaluesExp {tag: "Let-values"; bindings:BindingValues[]; body: CExp[];}
+
 
 const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
     const varDecls : VarDecl[][] = map((b: BindingValues) => b.vars, exp.bindings)
@@ -66,43 +54,31 @@ const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
     
     const valsTuples: Result<SExpValue[][]> = bind(vals1, (val: SExpValue[]) => mapResult(getTuples, val))
     const vals = bind(valsTuples,(valt:SExpValue[][]) => makeOk(mapDoubleSExps(valt)))
-    // console.log("vardecls: "+ varDecls + "\n")
-    // console.log("vals: "+ vals + "\n")
-    // isOk(vals)? console.log("vals.value: "+ vals.value + "\n"): console.log("vals not ok");
-    // return isOk(vals)?
-    //     isEqualLength(varDecls,vals.value)?
-    return bind(vals, (vals:SExpValue[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
-    // : makeFailure("not equal length")
-    // : makeFailure("vals not ok")
+
+    const equalLength:Result<boolean> = safe2((vds: VarDecl[][], vals: SExpValue[][]) => makeOk(isEqualLengthes(vds,vals)))
+                                                (makeOk(varDecls),valsTuples)
+    return isOk(equalLength)?
+        equalLength.value?
+    bind(vals, (vals:SExpValue[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env))):
+    makeFailure("not equal length"):
+    makeFailure("not ok")
 }
 
-const isEqualLength = (vds: VarDecl[][], vals: SExpValue[]): boolean =>{
-    //  const valuesVals = mapResult((v:CExp)=>isValuesExp(v)? makeOk(v.val): makeFailure("not values exp"),vals)
-    //  const valuesVals = filter(isValuesExp,vals)
-      const valuesVals = map(getTupleNoResult, vals)
+const isEqualLengthes = (vds: VarDecl[][], vals: SExpValue[][]): boolean =>{
+
       let check = true;
       let i;
       for (i = 0; i < vds.length; i++){
-          if (vds[i].length !== valuesVals[i].length)
+          if (vds[i].length !== vals[i].length)
               check = false;
       }
       return check
-  }
+}
 
-//   const getValues = (v: CExp): ValuesExp => 
-//     isValuesExp(v) ? v : makeValuesExp([])
-
- const getTupleNoResult = (v: SExpValue): SExpValue[] => 
- isTuple(v)? v.list :[]
     
 const getTuples = (v: SExpValue): Result<SExpValue[]> => 
         isTuple(v) ? makeOk(v.list) : makeFailure(`non-tuple: ${JSON.stringify(v)}`)
-/*
-const extractValues = (v: ValuesExp, env: Env): Value[] =>{
-     const extracted = mapResult((c:CExp)=>applicativeEval(c,env),v.val)
-     return isOk(extracted)? extracted.value : [extracted.message] 
-}
-*/
+
 const mapDoubleSExps = (vals: SExpValue[][]): SExpValue[] => 
     chain((x) => x, vals); 
  
@@ -111,13 +87,7 @@ const mapDoubleDecls = (exp: VarDecl[][]): string[]=>{
    const mapedVarDecls =  exp.reduce((acc,curr) => acc.concat(curr), [])
    return (map((v:VarDecl)=>v.var,mapedVarDecls))  
 }
-    //map((v:VarDecl[])=>map((s:VarDecl)=>s.var,v),exp)
-/*
-// We want the following as an array of the numbers:
-let a = [{group: 1, numbers:[1, 2, 3]}, {group: 2, numbers:[4, 5, 6]}];
-a.map(x => x.numbers).reduce((acc,curr) => acc.concat(curr), [])
-[ 1, 2, 3, 4, 5, 6 ]
-*/
+
     
 const evalIf = (exp: IfExp, env: Env): Result<Value> =>
     bind(applicativeEval(exp.test, env),
