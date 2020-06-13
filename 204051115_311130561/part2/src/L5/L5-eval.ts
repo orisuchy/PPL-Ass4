@@ -14,7 +14,7 @@ import { isEmpty, first, rest } from '../shared/list';
 import { Result, makeOk, makeFailure, mapResult, safe2, bind, isOk } from "../shared/result";
 import { parse as p } from "../shared/parser";
 import { applyPrimitive } from "./evalPrimitive";
-import { isNonEmptyTupleTExp } from "./TExp";
+import { isNonEmptyTupleTExp, TupleTExp } from "./TExp";
 import { isArray } from "util";
 
 // ========================================================
@@ -61,27 +61,40 @@ const evaLetValues = (exp:LetvaluesExp, env:Env): Result<Value>=>{
 const evaLetValues = (exp: LetvaluesExp, env: Env): Result<Value> => {
     const varDecls : VarDecl[][] = map((b: BindingValues) => b.vars, exp.bindings)
     const vars = mapDoubleDecls(varDecls)
+    
     const vals1: Result<SExpValue[]> = mapResult((v : CExp) => applicativeEval(v, env), map((b : BindingValues) => b.val, exp.bindings));
+    
     const valsTuples: Result<SExpValue[][]> = bind(vals1, (val: SExpValue[]) => mapResult(getTuples, val))
     const vals = bind(valsTuples,(valt:SExpValue[][]) => makeOk(mapDoubleSExps(valt)))
+    // console.log("vardecls: "+ varDecls + "\n")
+    // console.log("vals: "+ vals + "\n")
+    // isOk(vals)? console.log("vals.value: "+ vals.value + "\n"): console.log("vals not ok");
+    // return isOk(vals)?
+    //     isEqualLength(varDecls,vals.value)?
     return bind(vals, (vals:SExpValue[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)))
-
-    /*
-    let vals2 : any = []
-    isOk(vals1)? 
-        vals2 = vals1.value.map(x => isValuesExp(x)? extractValues(x,env) : x ) : makeFailure("vals1 not ok")
-    
-    //const vals1: Result<Value[]> = mapResult((b : BindingValues) => applicativeEval(b.val,env), exp.bindings);
-
-    
-    let vals3:any = []
-    vals3 = vals2.reduce((acc:any,curr:any) => acc.concat(curr), [])
-
-    const varDecls : VarDecl[][] = map((b: BindingValues) => b.vars, exp.bindings)
-    const vars = mapDoubleDecls(varDecls)
-    return bind(vals3, (vals: Value[]) => evalSequence(exp.body, makeExtEnv(vars, vals, env)));
-    */
+    // : makeFailure("not equal length")
+    // : makeFailure("vals not ok")
 }
+
+const isEqualLength = (vds: VarDecl[][], vals: SExpValue[]): boolean =>{
+    //  const valuesVals = mapResult((v:CExp)=>isValuesExp(v)? makeOk(v.val): makeFailure("not values exp"),vals)
+    //  const valuesVals = filter(isValuesExp,vals)
+      const valuesVals = map(getTupleNoResult, vals)
+      let check = true;
+      let i;
+      for (i = 0; i < vds.length; i++){
+          if (vds[i].length !== valuesVals[i].length)
+              check = false;
+      }
+      return check
+  }
+
+//   const getValues = (v: CExp): ValuesExp => 
+//     isValuesExp(v) ? v : makeValuesExp([])
+
+ const getTupleNoResult = (v: SExpValue): SExpValue[] => 
+ isTuple(v)? v.list :[]
+    
 const getTuples = (v: SExpValue): Result<SExpValue[]> => 
         isTuple(v) ? makeOk(v.list) : makeFailure(`non-tuple: ${JSON.stringify(v)}`)
 /*

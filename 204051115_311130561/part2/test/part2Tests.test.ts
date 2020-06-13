@@ -99,6 +99,7 @@ describe('L4 Normal Eval', () => {
     it('test evalParse 5', () => {
         expect(evalParse("(let-values (((a) (values 1 2)) ((b c) (values 3))) (+ a b c))")).satisfy(isFailure);
     })
+
     it('test evalParse 6', () => {
         expect(bind(parseL5("(L5 (define x 7) (let-values (((a b c) (values 1 2 3)) ((d e f) (values 4 5 6))) (+ x b c) (+ (let-values (((y t) (values 4 5))) (* t y x)) (+ f d e))))"), evalProgram))
         .to.deep.equal(makeOk(155));
@@ -106,6 +107,10 @@ describe('L4 Normal Eval', () => {
     it('test typeof 1', () => {
         expect(L5typeof(`(let-values ((((n : number) (s : number)) (values 1 2) : (number * number)) (((a : boolean) (t : number)) (values #t 3) : (boolean * number))) (if a (* n t) (* s t)))`))
         .to.deep.equal(makeOk(`number`));
+    })
+
+    it('test evalParse Ori', () => {
+        expect(evalParse("(let-values (((a) (values 1)) ((b c) (values 3 2))) (+ a b c))")).to.deep.equal(makeOk(6));
     })
 });
 

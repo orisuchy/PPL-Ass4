@@ -1,5 +1,6 @@
 import { SlowBuffer } from "buffer";
 import { pair } from "ramda";
+import { error } from "console";
 
 
 export function f(x: number): Promise<number>{
@@ -18,8 +19,6 @@ export function g (x: number): number{
 export function h (x: number): Promise<number> {
     return f(g(x))
 }
-let x = 0;
-let check = new Promise<number>((resolve : any, reject: any) => {(x===1)? resolve(1):reject(0)})
 
 
 const getTheOtherOne = (x:any,arr:any[2])=>{
@@ -30,35 +29,14 @@ const getTheOtherOne = (x:any,arr:any[2])=>{
     return 0;
 }
 
-export const slower = <T,T1,T2>(p1: Promise<any>, p2: Promise<any>):Promise<[number, string]> =>{
-
+export const slower = (p1: Promise<any>, p2: Promise<any>):Promise<[number, string]> =>{
   const pArr = [p1,p2];
-  
-  //const vals = Promise.all(([p1,p2]))
- 
-  // yesterday it was "return new Promise< [0, "failed"]>" but that doesnt compile cuz it needs an executor function
-  return new Promise<[number, string]>( (resolve : any, reject: any) => {
+  return new Promise<[number, string]>( (resolve,reject) => {
     Promise.race([p1,p2]).then((value)=> {
       Promise.all(([p1,p2])).then((valsArr)=>{
         pArr[getTheOtherOne(value,valsArr)].then((val)=> {
-          console.log([getTheOtherOne(value,valsArr),val]+"\n" + "val type -"+typeof(val))
-          resolve ([getTheOtherOne(value,valsArr),val])}).catch((v)=>{return [0, v]})
-      }).catch((v)=>{return [0, v]})  
-  }).catch((v)=>{return [0, v]}) 
+          resolve ([getTheOtherOne(value,valsArr),val])}).catch((v)=>{reject(new Error("error"))})
+      }).catch((v)=>{reject(new Error("error"))})  
+    }).catch((v)=>{reject(new Error("error"))}) 
   })
-
-  }
-/*
-const promise1 = new Promise(function(resolve, reject){
-  setTimeout(resolve, 500, 'one'); 
-})
-
-const promise2 = new Promise(function(resolve, reject){
-  setTimeout(resolve, 100, 'two'); 
-})
-
-Slower([promise1, promise2]).then(function(value{
-  console.log(value);
-});  => (0,'ONE')
-
-*/
+}

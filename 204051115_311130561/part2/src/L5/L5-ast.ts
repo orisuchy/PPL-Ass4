@@ -3,7 +3,7 @@
 // L5 extends L4 with:
 // optional type annotations
 
-import { join, map, zipWith, values } from "ramda";
+import { join, map, zipWith, values, filter } from "ramda";
 import { Sexp, Token } from 's-expression';
 import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, makeSymbolSExp, SExpValue, valueToString, isSExp } from './L5-value';
 import { isTVar, makeFreshTVar, parseTExp, unparseTExp, TExp } from './TExp';
@@ -264,9 +264,24 @@ const isGoodBindingValues = (bindings: Sexp): bindings is [Sexp[], Sexp][] =>
     isArray(bindings) && allT(isArray, bindings) && allT(isArray, map(first, bindings));
 
 const parseBindingValues = (bindings: [Sexp[], Sexp][]): Result<BindingValues[]> =>
-    safe2((vds: VarDecl[][], vals: CExp[]) => makeOk(zipWith(makeBindingValues, vds, vals)))
+    safe2((vds: VarDecl[][], vals: CExp[]) =>makeOk(zipWith(makeBindingValues, vds, vals)))
         (mapResult(parseVarDeclArr, map(b => b[0], bindings)), mapResult(parseL5CExp, map(b => b[1], bindings)));
-
+/*
+const isEqualLength = (vds: VarDecl[][], vals: CExp[]): boolean =>{
+  //  const valuesVals = mapResult((v:CExp)=>isValuesExp(v)? makeOk(v.val): makeFailure("not values exp"),vals)
+    //const valuesVals = filter(isValuesExp,vals)
+    const valuesVals: ValuesExp[] = map(getValues, vals)
+    let check = true;
+    let i;
+    for (i = 0; i < vds.length; i++){
+        if (vds[i].length !== valuesVals[i].val.length)
+            check = false;
+    }
+    return check
+}
+const getValues = (v: CExp): ValuesExp => 
+        isValuesExp(v) ? v : makeValuesExp([])
+*/
 const parseVarDeclArr = (arr: Sexp[]):Result<VarDecl[]>=>
     mapResult(parseVarDecl, arr);
 
